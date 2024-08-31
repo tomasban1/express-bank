@@ -195,11 +195,34 @@ app.get('/api/account/:name-:surname/:personName', (req, res) => {
             message: 'Person name has to be text.'
         })
     }
-    accountList.map(acc => acc.name.toLowerCase() === name ? res.send(name) : res.json({
-        state: 'error',
-        message: 'Person by that name dosent exist'
-    }));
+    for (const acc of accountList) {
+        if (acc.name.toLowerCase() === name) {
+            return res.send(acc.name)
+        } else {
+            return res.json({
+                state: 'error',
+                message: 'Person by that name dosent exist'
+            });
+        }
+    }
+});
 
+app.put('/api/account/:name-:surname/:personName', (req, res) => {
+    const oldName = req.params.name.toLowerCase();
+    const oldSurname = req.params.surname.toLowerCase();
+    const newName = req.body.newName;
+
+    for (const acc of accountList) {
+        if (oldName === acc.name.toLowerCase() && oldSurname === acc.surname.toLowerCase()) {
+            if (newName) {
+                acc.name = newName;
+                return res.json({
+                    state: 'success',
+                    message: 'Person name succesfully updated.'
+                });
+            }
+        }
+    }
 
 });
 
