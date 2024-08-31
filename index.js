@@ -1,5 +1,6 @@
 import express from 'express';
 
+
 const app = express();
 const port = 5019;
 
@@ -33,6 +34,15 @@ app.post('/api/account', (req, res) => {
     const name = req.body.name;
     const surname = req.body.surname;
 
+    if (typeof req.body !== 'object'
+        || Array.isArray(req.body)
+        || req.body === null) {
+        return res.json({
+            status: 'error',
+            message: 'Wrong data type.',
+        });
+    }
+
     if (age < 18) {
         return res.json({
             state: 'Error',
@@ -54,8 +64,8 @@ app.post('/api/account', (req, res) => {
         });
     }
 
-    for (const person of accountList) {
 
+    for (const person of accountList) {
         if (person.name === name
             && person.surname === surname
             && person.dateOfBirth === req.body.dateOfBirth) {
@@ -68,6 +78,26 @@ app.post('/api/account', (req, res) => {
 
     const minLength = 2;
     const maxLength = 20;
+    if (name.length < minLength || surname.length < minLength) {
+        return res.json({
+            state: 'Error',
+            message: `Person name and surname has to be ${minLength} chacakters or more.`,
+        });
+    }
+
+    if (name.length > maxLength || surname.length > maxLength) {
+        return res.json({
+            state: 'Error',
+            message: `Person name and surname cannot be longer than ${maxLength} chacakters.`,
+        });
+    }
+
+    if (name[0].toUpperCase() !== name[0] || surname[0].toUpperCase() !== surname[0]) {
+        return res.json({
+            state: 'Error',
+            message: `Person name and surname has to start with uppercase letter.`,
+        });
+    }
 
     console.log(req.body);
 
@@ -125,14 +155,29 @@ app.delete('/api/account/:name-:surname', (req, res) => {
 });
 
 app.put('/api/account/:name-:surname', (req, res) => {
-    const newName = req.query.newName;
-    const newSurname = req.query.newSurname;
-    const newDOB = req.query.newDateOfBirth;
+    const newName = req.body.newName;
+    const newSurname = req.body.newSurname;
+    const newDOB = req.body.newDateOfBirth;
+    const oldName = req.params.name;
+    const oldSurname = req.params.surname;
 
     for (const person of accountList) {
-        person.name === newName;
-        person.surname === newSurname;
-        person.dateOfBirth === newDOB;
+        if (oldName === person.name.toLowerCase() && oldSurname === person.surname.toLowerCase()) {
+            if (newName) {
+                person.name = newName;
+            }
+            if (newSurname) {
+                person.surname = newSurname;
+            }
+            if (newDOB) {
+                person.dateOfBirth = newDOB;
+            }
+        } else {
+            return res.json({
+                state: 'Error',
+                message: 'No account with such person.',
+            });
+        }
     }
 
     return res.json({
