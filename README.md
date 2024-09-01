@@ -248,6 +248,8 @@ Data:
 }
 ```
 
+## All money transfers are in cents!!
+
 ## 🎅 Authors
 
 Tomas: [Github](https://github.com/tomasban1)

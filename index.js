@@ -110,25 +110,27 @@ app.get('/api/account/:name-:surname', (req, res) => {
 
 app.delete('/api/account/:name-:surname', (req, res) => {
     const name = req.params.name.toLowerCase();
-    const surName = req.params.surname.toLowerCase();
-    for (const person of accountList) {
-        if (person.accMoneyBalance > 0) {
-            return res.json({
-                state: 'Error',
-                message: 'Money balance has to be 0 to delete account',
-            });
-        }
-        if (person.name.toLowerCase() === name && person.surname.toLowerCase() === surName) {
-            accountList.splice(person, 1);
-            return res.json({
-                state: 'Success',
-                message: 'Account successfully deleted',
-            });
-        }
+    const surname = req.params.surname.toLowerCase();
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'Error',
+            message: 'No account with such person.',
+        });
     }
+
+    if (accountList[index].accMoneyBalance > 0) {
+        return res.json({
+            state: 'Error',
+            message: 'Money balance has to be 0 to delete account',
+        });
+    }
+
+    accountList.splice(index, 1);
     return res.json({
-        state: 'Error',
-        message: 'No account with such person.',
+        state: 'Success',
+        message: 'Account successfully deleted',
     });
 });
 
@@ -346,7 +348,7 @@ app.post('/api/withdrawal', (req, res) => {
 
     let parsed = parseFloat(accountList[index].accMoneyBalance)
     let transaction = parsed -= parseFloat(convertMoney(moneyToWithdraw));
-    accountList[index].accMoneyBalance = transaction + 'Eur'
+    accountList[index].accMoneyBalance = transaction.toFixed(2) + ' Eur'
 
     return res.json({
         state: 'success',
@@ -368,9 +370,16 @@ app.post('/api/deposit', (req, res) => {
         });
     }
 
+    if (typeof moneyToDeposit !== 'number' || moneyToDeposit === NaN) {
+        return res.json({
+            state: 'error',
+            message: 'Money ammount has to be a number.'
+        });
+    }
+
     let parsed = parseFloat(accountList[index].accMoneyBalance)
     let transaction = parsed += parseFloat(convertMoney(moneyToDeposit));
-    accountList[index].accMoneyBalance = transaction + 'Eur';
+    accountList[index].accMoneyBalance = transaction.toFixed(2) + ' Eur';
 
 
     return res.json({
@@ -403,6 +412,13 @@ app.post('/api/transfer', (req, res) => {
         });
     }
 
+    if (typeof money !== 'number' || money === NaN) {
+        return res.json({
+            state: 'error',
+            message: 'Money ammount has to be a number.'
+        });
+    }
+
     if (fromName === toName && fromSurname === toSurname) {
         return res.json({
             state: 'error',
@@ -419,11 +435,11 @@ app.post('/api/transfer', (req, res) => {
 
 
     let transactionFrom = parsedFrom -= parseFloat(convertMoney(money));
-    accountList[fromIndex].accMoneyBalance = transactionFrom + 'Eur';
+    accountList[fromIndex].accMoneyBalance = transactionFrom.toFixed(2) + ' Eur';
 
     let parsedTo = parseFloat(accountList[toIndex].accMoneyBalance)
     let transactionTo = parsedTo += parseFloat(convertMoney(money));
-    accountList[toIndex].accMoneyBalance = transactionTo + 'Eur';
+    accountList[toIndex].accMoneyBalance = transactionTo.toFixed(2) + ' Eur';
 
     return res.json({
         state: 'success',
