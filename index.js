@@ -3,6 +3,7 @@ import { validateData } from './lib/validateData.js';
 import { validateAge } from './lib/validateAge.js';
 import { validateName } from './lib/validateName.js';
 import { validateSymbols } from './lib/alowedSymbolValidation.js';
+import { convertMoney } from './lib/convertMoney.js';
 
 
 
@@ -83,7 +84,7 @@ app.post('/api/account', (req, res) => {
         name: req.body.name,
         surname: req.body.surname,
         dateOfBirth: req.body.dateOfBirth,
-        accMoneyBalance: req.body.accMoneyBalance
+        accMoneyBalance: 0
     });
 
     return res.json({
@@ -91,7 +92,6 @@ app.post('/api/account', (req, res) => {
         message: 'Account has been added',
     });
 });
-
 
 app.get('/api/account/:name-:surname', (req, res) => {
     const name = req.params.name.toLowerCase();
@@ -157,6 +157,7 @@ app.put('/api/account/:name-:surname', (req, res) => {
             });
         }
     }
+
     return res.json({
         state: 'error',
         message: 'Person by that name dosent exist.'
@@ -343,11 +344,13 @@ app.post('/api/withdrawal', (req, res) => {
         });
     }
 
-    accountList[index].accMoneyBalance -= moneyToWithdraw;
+    let parsed = parseFloat(accountList[index].accMoneyBalance)
+    let transaction = parsed -= parseFloat(convertMoney(moneyToWithdraw));
+    accountList[index].accMoneyBalance = transaction + 'Eur'
 
     return res.json({
         state: 'success',
-        message: `Money succesfully withdrawn from ${accountList[index].name} ${accountList[index].surname}: ${moneyToWithdraw}eur`
+        message: `Money succesfully withdrawn from ${accountList[index].name} ${accountList[index].surname}: ${convertMoney(moneyToWithdraw)}`
     });
 
 });
@@ -365,11 +368,14 @@ app.post('/api/deposit', (req, res) => {
         });
     }
 
-    accountList[index].accMoneyBalance += moneyToDeposit;
+    let parsed = parseFloat(accountList[index].accMoneyBalance)
+    let transaction = parsed += parseFloat(convertMoney(moneyToDeposit));
+    accountList[index].accMoneyBalance = transaction + 'Eur';
+
 
     return res.json({
         state: 'success',
-        message: `Money succesfully deposited to ${accountList[index].name} ${accountList[index].surname}: ${moneyToDeposit}eur`
+        message: `Money succesfully deposited to ${accountList[index].name} ${accountList[index].surname}: ${convertMoney(moneyToDeposit)}`
     });
 });
 
@@ -397,12 +403,31 @@ app.post('/api/transfer', (req, res) => {
         });
     }
 
-    accountList[fromIndex].accMoneyBalance -= money;
-    accountList[toIndex].accMoneyBalance += money;
+    if (fromName === toName && fromSurname === toSurname) {
+        return res.json({
+            state: 'error',
+            message: 'Cannot trasfer money to the same account'
+        });
+    }
+    let parsedFrom = parseFloat(accountList[fromIndex].accMoneyBalance)
+    if (parsedFrom < parseFloat(convertMoney(money))) {
+        return res.json({
+            state: 'error',
+            message: `Insufficient account money balance. Money left: ${accountList[fromIndex].accMoneyBalance}`
+        });
+    }
+
+
+    let transactionFrom = parsedFrom -= parseFloat(convertMoney(money));
+    accountList[fromIndex].accMoneyBalance = transactionFrom + 'Eur';
+
+    let parsedTo = parseFloat(accountList[toIndex].accMoneyBalance)
+    let transactionTo = parsedTo += parseFloat(convertMoney(money));
+    accountList[toIndex].accMoneyBalance = transactionTo + 'Eur';
 
     return res.json({
         state: 'success',
-        message: `${money}eur successfully transfered from ${accountList[fromIndex].name} ${accountList[fromIndex].surname} to ${accountList[toIndex].name} ${accountList[toIndex].surname}.`
+        message: `${convertMoney(money)} successfully transfered from ${accountList[fromIndex].name} ${accountList[fromIndex].surname} to ${accountList[toIndex].name} ${accountList[toIndex].surname}.`
     });
 
 })
