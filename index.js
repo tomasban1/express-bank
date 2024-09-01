@@ -24,7 +24,7 @@ app.get('/api', (req, res) => {
     return res.json(data);
 });
 
-export const accountList = [];
+const accountList = [];
 
 app.get('/api/account', (req, res) => {
     return res.json(accountList)
@@ -167,8 +167,15 @@ app.put('/api/account/:name-:surname', (req, res) => {
 app.get('/api/account/:name-:surname/name', (req, res) => {
     const name = req.params.name.toLowerCase();
     const surname = req.params.surname.toLowerCase();
+    let index = getIndex(name, surname);
 
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
+
     for (const acc of accountList) {
         if (acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname) {
             return res.send(accountList[index].name)
@@ -177,10 +184,17 @@ app.get('/api/account/:name-:surname/name', (req, res) => {
 });
 
 app.put('/api/account/:name-:surname/name', (req, res) => {
-    const oldName = req.params.name.toLowerCase();
-    const oldSurname = req.params.surname.toLowerCase();
+    const name = req.params.name.toLowerCase();
+    const surname = req.params.surname.toLowerCase();
     const newName = req.body.newName;
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === oldName && acc.surname.toLowerCase() === oldSurname);
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
 
     const nameError = validateName(newName, accountList[index].surname);
     if (nameError !== '') {
@@ -209,17 +223,31 @@ app.put('/api/account/:name-:surname/name', (req, res) => {
 app.get('/api/account/:name-:surname/surname', (req, res) => {
     const name = req.params.name.toLowerCase();
     const surname = req.params.surname.toLowerCase();
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
 
     return res.send(accountList[index].surname)
 
 });
 
 app.put('/api/account/:name-:surname/surname', (req, res) => {
-    const oldName = req.params.name.toLowerCase();
-    const oldSurname = req.params.surname.toLowerCase();
+    const name = req.params.name.toLowerCase();
+    const surname = req.params.surname.toLowerCase();
     const newSurname = req.body.newSurname;
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === oldName && acc.surname.toLowerCase() === oldSurname);
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
 
     const nameError = validateName(accountList[index].name, newSurname);
     if (nameError !== '') {
@@ -247,7 +275,14 @@ app.put('/api/account/:name-:surname/surname', (req, res) => {
 app.get('/api/account/:name-:surname/dob', (req, res) => {
     const name = req.params.name.toLowerCase();
     const surname = req.params.surname.toLowerCase();
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
 
     return res.send(accountList[index].dateOfBirth)
 });
@@ -256,7 +291,14 @@ app.put('/api/account/:name-:surname/dob', (req, res) => {
     const name = req.params.name.toLowerCase();
     const surname = req.params.surname.toLowerCase();
     const newDob = req.body.newDateOfBirth;
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
+    }
 
     const ageError = validateAge(newDob)
     if (ageError !== '') {
@@ -274,6 +316,96 @@ app.put('/api/account/:name-:surname/dob', (req, res) => {
     });
 });
 
+app.post('/api/withdrawal', (req, res) => {
+    const name = req.body.name.toLowerCase();
+    const surname = req.body.surname.toLowerCase();
+    const moneyToWithdraw = req.body.moneyAmmount;
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'No person with such account.'
+        });
+    }
+
+    if (typeof moneyToWithdraw !== 'number' || moneyToWithdraw === NaN) {
+        return res.json({
+            state: 'error',
+            message: 'Money ammount has to be a number.'
+        });
+    }
+
+    if (moneyToWithdraw > accountList[index].accMoneyBalance) {
+        return res.json({
+            state: 'error',
+            message: `Not enough money left in the account to withdraw. Acc balance: ${accountList[index].accMoneyBalance}`
+        });
+    }
+
+    accountList[index].accMoneyBalance -= moneyToWithdraw;
+
+    return res.json({
+        state: 'success',
+        message: `Money succesfully withdrawn from ${accountList[index].name} ${accountList[index].surname}: ${moneyToWithdraw}eur`
+    });
+
+});
+
+app.post('/api/deposit', (req, res) => {
+    const name = req.body.name.toLowerCase();
+    const surname = req.body.surname.toLowerCase();
+    const moneyToDeposit = req.body.moneyAmmount;
+    let index = getIndex(name, surname);
+
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'No person with such account.'
+        });
+    }
+
+    accountList[index].accMoneyBalance += moneyToDeposit;
+
+    return res.json({
+        state: 'success',
+        message: `Money succesfully deposited to ${accountList[index].name} ${accountList[index].surname}: ${moneyToDeposit}eur`
+    });
+});
+
+app.post('/api/transfer', (req, res) => {
+    const fromName = req.body.fromName.toLowerCase();
+    const fromSurname = req.body.fromSurname.toLowerCase();
+    const toName = req.body.toName.toLowerCase();
+    const toSurname = req.body.toSurname.toLowerCase();
+    const money = req.body.moneyAmmount;
+
+    let fromIndex = getIndex(fromName, fromSurname);
+    let toIndex = getIndex(toName, toSurname);
+
+    if (fromIndex === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person you want to trasfer from dosent exist'
+        });
+    }
+
+    if (toIndex === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person you want to trasfer to dosent exist'
+        });
+    }
+
+    accountList[fromIndex].accMoneyBalance -= money;
+    accountList[toIndex].accMoneyBalance += money;
+
+    return res.json({
+        state: 'success',
+        message: `${money}eur successfully transfered from ${accountList[fromIndex].name} ${accountList[fromIndex].surname} to ${accountList[toIndex].name} ${accountList[toIndex].surname}.`
+    });
+
+})
 app.get('*', (req, res) => {
     console.log('404');
     return res.json({ status: 'error', message: "404 page not found" });
@@ -286,5 +418,7 @@ app.listen(port, () => {
 });
 
 
-const getIndex = (name, surname) => accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
-
+function getIndex(name, surname) {
+    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
+    return index;
+}
