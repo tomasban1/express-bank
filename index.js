@@ -1,10 +1,15 @@
 import express from 'express';
+import { validateData } from './lib/validateData.js';
+import { validateAge } from './lib/validateAge.js';
+import { validateName } from './lib/validateName.js';
+import { validateSymbols } from './lib/alowedSymbolValidation.js';
+
 
 
 const app = express();
 const port = 5019;
 
-app.use(express.json());
+app.use(express.json({ type: 'application/json' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
@@ -26,44 +31,40 @@ app.get('/api/account', (req, res) => {
 });
 
 app.post('/api/account', (req, res) => {
-    let personDate = new Date(req.body.dateOfBirth);
-    let currDate = new Date();
-    let diff = new Date(currDate - personDate);
-    let age = Math.abs(diff.getUTCFullYear() - 1970);
-
     const name = req.body.name;
     const surname = req.body.surname;
+    const fullname = name + surname;
 
-    if (typeof req.body !== 'object'
-        || Array.isArray(req.body)
-        || req.body === null) {
+    const dataError = validateData(req.body);
+    if (dataError !== '') {
         return res.json({
             status: 'error',
-            message: 'Wrong data type.',
+            message: dataError,
         });
     }
-
-    if (age < 18) {
+    const ageError = validateAge(req.body.dateOfBirth)
+    if (ageError !== '') {
         return res.json({
-            state: 'Error',
-            message: 'Person has to be 18 years or older to create an account',
+            status: 'error',
+            message: ageError,
         });
     }
 
-    if (name === surname) {
+    const symbolError = validateSymbols(fullname);
+    if (symbolError !== '') {
         return res.json({
-            state: 'Error',
-            message: 'Name and Surname cannot be the same',
+            status: 'error',
+            message: symbolError,
         });
     }
 
-    if (typeof name !== 'string' || typeof surname !== 'string') {
+    const nameError = validateName(name, surname);
+    if (nameError !== '') {
         return res.json({
-            state: 'Error',
-            message: 'Name and Surname must be text format',
+            status: 'error',
+            message: nameError,
         });
     }
-
 
     for (const person of accountList) {
         if (person.name === name
@@ -74,29 +75,6 @@ app.post('/api/account', (req, res) => {
                 message: 'Account with the same data already exists.',
             });
         }
-    }
-
-    const minLength = 2;
-    const maxLength = 20;
-    if (name.length < minLength || surname.length < minLength) {
-        return res.json({
-            state: 'Error',
-            message: `Person name and surname has to be ${minLength} chacakters or more.`,
-        });
-    }
-
-    if (name.length > maxLength || surname.length > maxLength) {
-        return res.json({
-            state: 'Error',
-            message: `Person name and surname cannot be longer than ${maxLength} chacakters.`,
-        });
-    }
-
-    if (name[0].toUpperCase() !== name[0] || surname[0].toUpperCase() !== surname[0]) {
-        return res.json({
-            state: 'Error',
-            message: `Person name and surname has to start with uppercase letter.`,
-        });
     }
 
     console.log(req.body);
@@ -172,23 +150,22 @@ app.put('/api/account/:name-:surname', (req, res) => {
             if (newDOB) {
                 person.dateOfBirth = newDOB;
             }
-        } else {
+
             return res.json({
-                state: 'Error',
-                message: 'No account with such person.',
+                state: 'success',
+                message: 'Account data successfuly updated.'
             });
         }
     }
-
     return res.json({
-        state: 'success',
-        message: 'Person name successfuly updated.'
-    })
+        state: 'error',
+        message: 'Person by that name dosent exist.'
+    });
 
 });
 
-app.get('/api/account/:name-:surname/:personName', (req, res) => {
-    const name = req.params.personName.toLowerCase();
+app.get('/api/account/:name-:surname/:name', (req, res) => {
+    const name = req.params.name.toLowerCase();
     if (typeof name !== 'string') {
         return res.json({
             state: 'error',
@@ -207,22 +184,55 @@ app.get('/api/account/:name-:surname/:personName', (req, res) => {
     }
 });
 
-app.put('/api/account/:name-:surname/:personName', (req, res) => {
+app.put('/api/account/:name-:surname/:name', (req, res) => {
     const oldName = req.params.name.toLowerCase();
     const oldSurname = req.params.surname.toLowerCase();
     const newName = req.body.newName;
+    let index = findIndex(oldName, oldSurname)
 
-    for (const acc of accountList) {
-        if (oldName === acc.name.toLowerCase() && oldSurname === acc.surname.toLowerCase()) {
-            if (newName) {
-                acc.name = newName;
-                return res.json({
-                    state: 'success',
-                    message: 'Person name succesfully updated.'
-                });
-            }
-        }
-    }
+    accountList[index].name = newName;
+    return res.json({
+        state: 'success',
+        message: 'Person name succesfully updated.'
+    });
+
+});
+
+// app.get('/api/account/:name-:surname/:surname', (req, res) => {
+//     // const surname = req.params.surname.toLowerCase();
+//     // if (typeof surname !== 'string') {
+//     //     return res.json({
+//     //         state: 'error',
+//     //         message: 'Person surname has to be text.'
+//     //     })
+//     // }
+//     // for (const acc of accountList) {
+//     //     if (acc.surname.toLowerCase() === surname) {
+//     //         return res.send(acc.surname)
+//     //     } else {
+//     //         return res.json({
+//     //             state: 'error',
+//     //             message: 'Person by that surname dosent exist'
+//     //         });
+//     //     }
+//     // }
+// });
+
+app.put('/api/account/:name-:surname/:surname', (req, res) => {
+    const oldName = req.params.name.toLowerCase();
+    const oldSurname = req.params.surname.toLowerCase();
+    const newSurname = req.body.newSurname;
+    let index = findIndex(oldName, oldSurname)
+
+
+    accountList[index].surname = newSurname;
+    return res.json({
+        state: 'success',
+        message: 'Person surname succesfully updated.'
+    });
+
+
+
 
 });
 
@@ -231,3 +241,12 @@ app.put('/api/account/:name-:surname/:personName', (req, res) => {
 app.listen(port, () => {
     console.log(`App running on: http:localhost:${port}`);
 });
+
+
+function findIndex(name, surname) {
+    const firstName = name.toLowerCase();
+    const lastName = surname.toLowerCase();
+    let index = -1;
+    accountList.map((acc, i) => acc.name.toLowerCase() === firstName && acc.surname.toLowerCase() === lastName ? index = i : '');
+    return index;
+}
