@@ -4,6 +4,8 @@ import { validateAge } from './lib/validateAge.js';
 import { validateName } from './lib/validateName.js';
 import { validateSymbols } from './lib/alowedSymbolValidation.js';
 import { convertMoney } from './lib/convertMoney.js';
+import { accountList } from './data/accountData.js';
+import { getIndex } from './lib/getIndex.js';
 
 
 
@@ -24,8 +26,6 @@ app.get('/api', (req, res) => {
     };
     return res.json(data);
 });
-
-const accountList = [];
 
 app.get('/api/account', (req, res) => {
     return res.json(accountList)
@@ -120,10 +120,10 @@ app.delete('/api/account/:name-:surname', (req, res) => {
         });
     }
 
-    if (accountList[index].accMoneyBalance > 0) {
+    if (parseFloat(accountList[index].accMoneyBalance) > 0) {
         return res.json({
             state: 'Error',
-            message: 'Money balance has to be 0 to delete account',
+            message: `Money balance has to be 0 to delete account. Current money balance: ${accountList[index].accMoneyBalance}`,
         });
     }
 
@@ -138,33 +138,33 @@ app.put('/api/account/:name-:surname', (req, res) => {
     const newName = req.body.newName;
     const newSurname = req.body.newSurname;
     const newDOB = req.body.newDateOfBirth;
-    const oldName = req.params.name;
-    const oldSurname = req.params.surname;
+    const oldName = req.params.name.toLowerCase();
+    const oldSurname = req.params.surname.toLowerCase();
+    let index = getIndex(oldName, oldSurname);
 
-    for (const person of accountList) {
-        if (oldName === person.name.toLowerCase() && oldSurname === person.surname.toLowerCase()) {
-            if (newName) {
-                person.name = newName;
-            }
-            if (newSurname) {
-                person.surname = newSurname;
-            }
-            if (newDOB) {
-                person.dateOfBirth = newDOB;
-            }
-
-            return res.json({
-                state: 'success',
-                message: 'Account data successfuly updated.'
-            });
-        }
+    if (index === -1) {
+        return res.json({
+            state: 'error',
+            message: 'Person by that name dosent exist.'
+        });
     }
 
-    return res.json({
-        state: 'error',
-        message: 'Person by that name dosent exist.'
-    });
+    if (oldName === accountList[index].name.toLowerCase() && oldSurname === accountList[index].surname.toLowerCase()) {
+        if (newName) {
+            accountList[index].name = newName;
+        }
+        if (newSurname) {
+            accountList[index].surname = newSurname;
+        }
+        if (newDOB) {
+            accountList[index].dateOfBirth = newDOB;
+        }
 
+        return res.json({
+            state: 'success',
+            message: 'Account data successfuly updated.'
+        });
+    }
 });
 
 app.get('/api/account/:name-:surname/name', (req, res) => {
@@ -179,11 +179,10 @@ app.get('/api/account/:name-:surname/name', (req, res) => {
         });
     }
 
-    for (const acc of accountList) {
-        if (acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname) {
-            return res.send(accountList[index].name)
-        }
+    if (accountList[index].name.toLowerCase() === name && accountList[index].surname.toLowerCase() === surname) {
+        return res.send(accountList[index].name)
     }
+
 });
 
 app.put('/api/account/:name-:surname/name', (req, res) => {
@@ -459,7 +458,4 @@ app.listen(port, () => {
 });
 
 
-function getIndex(name, surname) {
-    let index = accountList.findIndex(acc => acc.name.toLowerCase() === name && acc.surname.toLowerCase() === surname);
-    return index;
-}
+

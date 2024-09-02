@@ -34,7 +34,7 @@ Git - _download and install_
 https://git-scm.com
 ```
 
-Insomnia - download and install
+Insomnia - _download and install_
 
 ```
 https://insomnia.rest/download
@@ -61,6 +61,8 @@ Would like to run this project locally? Open terminal and follow these steps:
     npm run dev
     ```
 
+## Instructions📝
+
 ### /api/account
 
 > POST:
@@ -70,7 +72,7 @@ Would like to run this project locally? Open terminal and follow these steps:
 -   Data transfer format - JSON
 -   Link exapmle: http://localhost:5019/api/account
 
-Data:
+Data to send:
 
 ```
 {
@@ -109,7 +111,7 @@ Requirements:
 -   Updates account data
 -   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -131,8 +133,9 @@ Data:
 
 -   HTTP method - PUT
 -   Updates account owner name
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -157,8 +160,9 @@ Requirements:
 
 -   HTTP method - PUT
 -   Updates account surname
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -183,8 +187,9 @@ Requirements:
 
 -   HTTP method - PUT
 -   Updates account owner date of birth
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -199,8 +204,9 @@ Data:
 -   HTTP method - POST
 -   Link example: http://localhost:5019/api/withdrawal
 -   Withdraws money from an account, which is in the data
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -217,8 +223,9 @@ Data:
 -   HTTP method - POST
 -   Link example: http://localhost:5019/api/deposit
 -   Deposits money to an account, which is in the data
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -235,8 +242,9 @@ Data:
 -   HTTP method - POST
 -   Link example: http://localhost:5019/api/transfer
 -   Transfers money from one account to another
+-   Data transfer format - JSON
 
-Data:
+Data to send:
 
 ```
 {
@@ -248,7 +256,7 @@ Data:
 }
 ```
 
-## All money transfers are in cents!!
+## All money withdrawals, deposits and transfers are in cents!!
 
 ## 🎅 Authors
 
