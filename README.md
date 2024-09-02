@@ -103,7 +103,7 @@ Requirements:
 
 Requirements:
 
--   Account can only be deleted, if account money balance is 0
+-   Account can only be deleted, if money balance is 0
 
 > PUT:
 

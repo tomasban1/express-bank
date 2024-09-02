@@ -78,6 +78,13 @@ app.post('/api/account', (req, res) => {
         }
     }
 
+    if (isNaN(new Date(req.body.dateOfBirth))) {
+        return res.json({
+            status: 'error',
+            message: `Invalid date format. Expected format: YYYY-MM-DD`,
+        });
+    }
+
     console.log(req.body);
 
     accountList.push({
@@ -146,6 +153,13 @@ app.put('/api/account/:name-:surname', (req, res) => {
         return res.json({
             state: 'error',
             message: 'Person by that name dosent exist.'
+        });
+    }
+
+    if (isNaN(new Date(newDOB))) {
+        return res.json({
+            status: 'error',
+            message: `Invalid date format. Expected format: YYYY-MM-DD`,
         });
     }
 
@@ -302,6 +316,13 @@ app.put('/api/account/:name-:surname/dob', (req, res) => {
         });
     }
 
+    if (isNaN(new Date(newDob))) {
+        return res.json({
+            status: 'error',
+            message: `Invalid date format. Expected format: YYYY-MM-DD`,
+        });
+    }
+
     const ageError = validateAge(newDob)
     if (ageError !== '') {
         return res.json({
@@ -448,9 +469,11 @@ app.post('/api/transfer', (req, res) => {
 })
 app.get('*', (req, res) => {
     console.log('404');
-    return res.json({ status: 'error', message: "404 page not found" });
+    return res.json({
+        status: 'error',
+        message: "404 page not found"
+    });
 })
-
 
 
 app.listen(port, () => {
